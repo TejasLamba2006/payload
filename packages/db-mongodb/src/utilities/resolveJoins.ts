@@ -139,7 +139,7 @@ export async function resolveJoins({
       if (isPolymorphicJoin) {
         const condition = resolveWhereForCollection({
           collectionSlug: joinCollectionSlug,
-          fieldNames: new Set(targetConfig.flattenedFields.map(({ name }) => name)),
+          fields: targetConfig.flattenedFields,
           where: joinQuery.where || {},
         })
 
