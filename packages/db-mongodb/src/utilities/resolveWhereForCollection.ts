@@ -9,11 +9,11 @@ type ResolvedCollectionCondition =
 
 export function resolveWhereForCollection({
   collectionSlug,
-  fields,
+  flattenedFields,
   where,
 }: {
   collectionSlug: string
-  fields: FlattenedField[]
+  flattenedFields: FlattenedField[]
   where: Where
 }): ResolvedCollectionCondition {
   const conditions: ResolvedCollectionCondition[] = []
@@ -28,7 +28,7 @@ export function resolveWhereForCollection({
           conditions: value.map((nestedWhere) =>
             resolveWhereForCollection({
               collectionSlug,
-              fields,
+              flattenedFields,
               where: nestedWhere,
             }),
           ),
@@ -52,7 +52,7 @@ export function resolveWhereForCollection({
     }
 
     // Missing fields remain nonmatching; valid nested fields keep their original constraints.
-    if (!hasConfiguredFieldPath({ fields, path: key.replace(/__/g, '.') })) {
+    if (!hasConfiguredFieldPath({ flattenedFields, path: key.replace(/__/g, '.') })) {
       return { matches: 'no-documents' }
     }
 
@@ -63,16 +63,19 @@ export function resolveWhereForCollection({
 }
 
 function hasConfiguredFieldPath({
-  fields,
+  flattenedFields,
   path,
 }: {
-  fields: FlattenedField[]
+  flattenedFields: FlattenedField[]
   path: string
 }): boolean {
   const segments = path.split('.')
 
   for (let index = 1; index < segments.length; index++) {
-    const container = getFieldByPath({ fields, path: segments.slice(0, index).join('.') })?.field
+    const container = getFieldByPath({
+      fields: flattenedFields,
+      path: segments.slice(0, index).join('.'),
+    })?.field
 
     // Each parent in the path must contain nested fields; a matching sibling does not count.
     if (!container || !('flattenedFields' in container)) {
@@ -80,7 +83,7 @@ function hasConfiguredFieldPath({
     }
   }
 
-  return Boolean(getFieldByPath({ fields, path }))
+  return Boolean(getFieldByPath({ fields: flattenedFields, path }))
 }
 
 function combineConditions({
